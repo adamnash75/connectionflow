@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Module>
+  
+  <ModulePrefs title="Connection Flow">
+    <Require feature="opensocial-0.8" />
+    <Require feature="views" />
+    <Require feature="dynamic-height" />  
+  </ModulePrefs>
+  
+  <Content type="html" view="home">
+    <![CDATA[
+		<link rel="stylesheet" type="text/css" href="http://adamnash.dyndns.org/~adamnash/hackfest/MooFlow.css" />
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/mootools-1.2-core.js"></script>
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/mootools-1.2-more.js"></script>
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/MooFlow.js"></script>
+		
+		<script type="text/javascript">
+			
+			// global variable to navigate to Canvas view
+			var canvasView = new gadgets.views.View("canvas");
+			
+			// Function to retrieve the social data of the owner 
+			function getOwnerData() {
+				var osRequest = opensocial.newDataRequest();
+				
+				osRequest.add(osRequest.newFetchPersonRequest(opensocial.DataRequest.PersonId.OWNER), 'owner');
+				osRequest.add(osRequest.newFetchPeopleRequest(opensocial.DataRequest.Group.OWNER_FRIENDS), 'ownerFriends');
+				
+				osRequest.send(onLoadOwnerData);
+			}
+
+			// Function to handle the OWNER data returned by the getOwnerData request.
+			// Asynchronous handler is called back from getOwnerData()
+			function onLoadOwnerData(dataResponse) {
+				
+				// Constants
+				var NUM_IMAGES = 50;
+				
+				// Set Canvas Size
+				gadgets.window.adjustHeight(190);
+				
+				// Build HTML for Owner
+				var owner = dataResponse.get('owner').getData();
+				
+				var ownerHtml = "";
+				
+				ownerHtml += 'My ';
+				ownerHtml += '<a href=\"javascript:void(0)\;\"';
+				ownerHtml += 'onclick=\"gadgets.views.requestNavigateTo(canvasView, {})\;\">'; 
+				ownerHtml += 'Connections';
+				ownerHtml += '</a>';
+				ownerHtml += ":<br>";
+				
+				// Set Owner HTML
+				document.getElementById('ownerDIV').innerHTML = ownerHtml;
+				
+				// Build HTML for Owner's Connections
+				var ownerFriends = dataResponse.get('ownerFriends').getData();
+				var connectionFlowHtml = "";
+				var ownerFriendsArray = ownerFriends.asArray();
+				
+				// Loop through connections and find the ones with pictures
+				var numImages = 0;
+				for (var i=0; (i < ownerFriendsArray.length) && (numImages < NUM_IMAGES); i++) {
+					var localImageURL = ownerFriendsArray[i].getField('thumbnailUrl');
+					
+					// Convert to larger image
+					localImageURL = localImageURL.replace('mpr/mpr/shrink_80_80', 'media');
+					
+					if (localImageURL != "") {
+						// Write image with metadata to div
+						connectionFlowHtml += '<div>';
+						connectionFlowHtml += '<img ';
+						connectionFlowHtml += 'src=\"' + localImageURL + '\" ';
+						connectionFlowHtml += 'title=\"' + ownerFriendsArray[i].getDisplayName() + '\" ';
+						connectionFlowHtml += 'alt=\"' + i + '\" ';
+						connectionFlowHtml += '/>';
+						connectionFlowHtml += '</div>';
+						
+						// Increment image count
+						numImages++
+					}
+				};
+				
+				// Set ConnectionsFlow HTML
+				document.getElementById('ConnectionFlowDIV').innerHTML = connectionFlowHtml;
+				
+				// Invoke the power of MooFlow
+				var mf = new MooFlow($('ConnectionFlowDIV'), {
+					startIndex: numImages / 2,
+					useSlider: true,
+					useAutoPlay: false,
+					useCaption: true,
+					useResize: false,
+					useMouseWheel: true,
+					useKeyInput: true,
+					'onClickView' : function(mixedObject) {
+						clickToProfile(ownerFriendsArray[mixedObject.alt].getId());
+					}
+				});
+			}
+
+			function clickToProfile(id) {
+				var targetView = new gadgets.views.View("profile");
+				gadgets.views.requestNavigateTo(targetView,  {}, id)
+			}
+			
+			// This is the actual code of the gadget view.  It starts the handler chain.
+			gadgets.util.registerOnLoadHandler(getOwnerData);
+			
+		</script>
+		
+		<div id="ownerDIV"> </div>
+		<div id="ConnectionFlowDIV" style="width:275px"> </div>
+
+    ]]>    
+  </Content>
+ 
+<Content type="html" view="profile">
+    <![CDATA[
+		<link rel="stylesheet" type="text/css" href="http://adamnash.dyndns.org/~adamnash/hackfest/MooFlow.css" />
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/mootools-1.2-core.js"></script>
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/mootools-1.2-more.js"></script>
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/MooFlow.js"></script>
+
+		<script type="text/javascript">
+			
+			// global variable to navigate to Canvas view
+			var canvasView = new gadgets.views.View("canvas");
+			
+			// Function to retrieve the social data of the owner 
+			function getOwnerData() {
+				var osRequest = opensocial.newDataRequest();
+
+				osRequest.add(osRequest.newFetchPersonRequest(opensocial.DataRequest.PersonId.OWNER), 'owner');
+				osRequest.add(osRequest.newFetchPeopleRequest(opensocial.DataRequest.Group.OWNER_FRIENDS), 'ownerFriends');
+
+				osRequest.send(onLoadOwnerData);
+			}
+
+			// Function to handle the OWNER data returned by the getOwnerData request.
+			// Asynchronous handler is called back from getOwnerData()
+			function onLoadOwnerData(dataResponse) {
+
+				// Constants
+				var NUM_IMAGES = 50;
+
+				// Set Canvas Size
+				gadgets.window.adjustHeight(280);
+
+				// Build HTML for Owner
+				var owner = dataResponse.get('owner').getData();
+				
+				var ownerHtml = "";
+				
+				ownerHtml += owner.getDisplayName() + '\'s ';
+				ownerHtml += '<a href=\"javascript:void(0)\;\"';
+				ownerHtml += 'onclick=\"gadgets.views.requestNavigateTo(canvasView, {})\;\">'; 
+				ownerHtml += 'Connections';
+				ownerHtml += '</a>';
+				ownerHtml += ":<br>";
+
+				// Set Owner HTML
+				document.getElementById('ownerDIV').innerHTML = ownerHtml;
+
+				// Build HTML for Owner's Connections
+				var ownerFriends = dataResponse.get('ownerFriends').getData();
+				var connectionFlowHtml = "";
+				var ownerFriendsArray = ownerFriends.asArray();
+
+				// Loop through connections and find the ones with pictures
+				var numImages = 0;
+				for (var i=0; (i < ownerFriendsArray.length) && (numImages < NUM_IMAGES); i++) {
+					var localImageURL = ownerFriendsArray[i].getField('thumbnailUrl');
+
+					// Convert to larger image
+					localImageURL = localImageURL.replace('mpr/mpr/shrink_80_80', 'media');
+
+					if (localImageURL != "") {
+						// Write image with metadata to div
+						connectionFlowHtml += '<div>';
+						connectionFlowHtml += '<img ';
+						connectionFlowHtml += 'src=\"' + localImageURL + '\" ';
+						connectionFlowHtml += 'title=\"' + ownerFriendsArray[i].getDisplayName() + ' - ' + 			
+												ownerFriendsArray[i].getField('aboutMe') + '\" ';
+						connectionFlowHtml += 'alt=\"' + i + '\" ';
+						connectionFlowHtml += '/>';
+						connectionFlowHtml += '</div>';
+
+						// Increment image count
+						numImages++
+					}
+				};
+
+				// Set ConnectionsFlow HTML
+				document.getElementById('ConnectionFlowDIV').innerHTML = connectionFlowHtml;
+
+				// Invoke the power of MooFlow
+				var mf = new MooFlow($('ConnectionFlowDIV'), {
+					startIndex: numImages / 2,
+					useSlider: true,
+					useAutoPlay: false,
+					useCaption: true,
+					useResize: true,
+					useMouseWheel: true,
+					useKeyInput: true,
+					'onClickView' : function(mixedObject) {
+						clickToProfile(ownerFriendsArray[mixedObject.alt].getId());
+					}
+				});
+			}
+
+			function clickToProfile(id) {
+				var targetView = new gadgets.views.View("profile");
+				gadgets.views.requestNavigateTo(targetView,  {}, id)
+			}
+
+			// This is the actual code of the gadget view.  It starts the handler chain.
+			gadgets.util.registerOnLoadHandler(getOwnerData);
+
+		</script>
+
+		<div id="ownerDIV"> </div>
+		<div id="ConnectionFlowDIV" style="width:435px"> </div>
+
+    ]]>    
+  </Content>
+
+<Content type="html" view="canvas">
+    <![CDATA[
+		<link rel="stylesheet" type="text/css" href="http://adamnash.dyndns.org/~adamnash/hackfest/MooFlow.css" />
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/mootools-1.2-core.js"></script>
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/mootools-1.2-more.js"></script>
+		<script type="text/javascript" src="http://adamnash.dyndns.org/~adamnash/hackfest/MooFlow.js"></script>
+
+		<script type="text/javascript">
+
+			// Function to retrieve the social data of the owner 
+			function getOwnerData() {
+				var osRequest = opensocial.newDataRequest();
+
+				osRequest.add(osRequest.newFetchPersonRequest(opensocial.DataRequest.PersonId.OWNER), 'owner');
+				osRequest.add(osRequest.newFetchPeopleRequest(opensocial.DataRequest.Group.OWNER_FRIENDS), 'ownerFriends');
+
+				osRequest.send(onLoadOwnerData);
+			}
+
+			// Function to handle the OWNER data returned by the getOwnerData request.
+			// Asynchronous handler is called back from getOwnerData()
+			function onLoadOwnerData(dataResponse) {
+
+				// Constants
+				var NUM_IMAGES = 100;
+
+				// Set Canvas Size
+				gadgets.window.adjustHeight(500);
+
+				// Build HTML for Owner
+				var owner = dataResponse.get('owner').getData();
+				var ownerHtml = owner.getDisplayName() + '\'s Connections'
+
+				ownerHtml += ":<br>"
+
+				// Set Owner HTML
+				document.getElementById('ownerDIV').innerHTML = ownerHtml;
+
+				// Build HTML for Owner's Connections
+				var ownerFriends = dataResponse.get('ownerFriends').getData();
+				var connectionFlowHtml = "";
+				var ownerFriendsArray = ownerFriends.asArray();
+
+				// Loop through connections and find the ones with pictures
+				var numImages = 0;
+				for (var i=0; (i < ownerFriendsArray.length) && (numImages < NUM_IMAGES); i++) {
+					var localImageURL = ownerFriendsArray[i].getField('thumbnailUrl');
+
+					// Convert to larger image
+					localImageURL = localImageURL.replace('mpr/mpr/shrink_80_80', 'media');
+
+					if (localImageURL != "") {
+						// Write image with metadata to div
+						connectionFlowHtml += '<div>';
+						connectionFlowHtml += '<img ';
+						connectionFlowHtml += 'src=\"' + localImageURL + '\" ';
+						connectionFlowHtml += 'title=\"' + ownerFriendsArray[i].getDisplayName() + ' - ' + 			
+												ownerFriendsArray[i].getField('aboutMe') + '\" ';
+						connectionFlowHtml += 'alt=\"' + i + '\" ';
+						connectionFlowHtml += '/>';
+						connectionFlowHtml += '</div>';
+
+						// Increment image count
+						numImages++
+					}
+				};
+
+				// Set ConnectionsFlow HTML
+				document.getElementById('ConnectionFlowDIV').innerHTML = connectionFlowHtml;
+
+				// Invoke the power of MooFlow
+				var mf = new MooFlow($('ConnectionFlowDIV'), {
+					startIndex: numImages / 2,
+					useSlider: true,
+					useAutoPlay: true,
+					useCaption: true,
+					useResize: true,
+					useMouseWheel: true,
+					useKeyInput: true,
+					'onClickView' : function(mixedObject) {
+						clickToProfile(ownerFriendsArray[mixedObject.alt].getId());
+					}
+				});
+			}
+
+			function clickToProfile(id) {
+				// var profileURL = "http://www.linkedin.com/profile?viewProfile=&key=";
+				
+				// profileURL += id;
+				// profileURL += "&trk=adam";
+				
+				var targetView = new gadgets.views.View("profile");
+				gadgets.views.requestNavigateTo(targetView,  {}, id)
+			}
+
+			// This is the actual code of the gadget view.  It starts the handler chain.
+			gadgets.util.registerOnLoadHandler(getOwnerData);
+
+			
+		</script>
+
+		<div id="ownerDIV"> </div>
+		<div id="ConnectionFlowDIV" style="width:772px"> </div>
+
+    ]]>    
+  </Content>
+
+</Module>
